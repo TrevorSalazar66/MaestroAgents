@@ -92,19 +92,108 @@ Para garantir resiliência total, o Maestro (Gateway Python) avalia continuament
 
 ---
 
-## 📁 5. Arquitetura Multi-Projeto & Isolamento de Contexto
+## 📁 5. Arquitetura de Workspaces, Projetos, Sandboxes Aninhados & Camadas de Chats
 
-Este Orquestrador opera como uma **ferramenta utilitária de governança reutilizável**, integrando-se nativamente à estrutura base de **`Diretrizes/`** de todos os projetos do desenvolvedor:
+Inspirado no modelo de isolamento e governança de ambientes agênticos avançados (como o Antigravity IDE), o sistema organiza o ambiente mobile e desktop em uma **hierarquia estrita de 4 níveis de contexto, persistência e privilégios**:
 
-1. **Adesão Estrita ao Template Base (`Diretrizes/`):**
-   * O sistema lê e respeita rigorosamente as regras globais descritas em `Diretrizes/GEMINI.md`, `Diretrizes/.agents/rules/` e `Diretrizes/docs/metodologias-e-fluxo.md`.
-2. **Particionamento Estrito por Pastas Dedicadas por Projeto:**
-   * Cada projeto possui sua própria pasta isolada em `conferencias/<nome-do-projeto>/`.
-   * Todos os históricos de debate, logs e arquivos de contexto `.md` são **permanentemente preservados** em sua respectiva pasta de projeto. Alternar entre projetos apenas muda a pasta ativa carregada pelo sistema, mantendo os dados de todos os projetos 100% salvos e intocados.
-3. **Definição Clara de "Ambiente Limpo" (*Clean Slate*):**
-   * O termo "Ambiente Limpo" significa simplesmente **criar ou selecionar uma nova pasta vazia** para um novo projeto, onde não existe histórico de conversação anterior carregado na sessão ativa. **Nenhum contexto ou log de projetos passados é apagado.**
-4. **Memória Passiva Global do Hermes (Aprendizado Inter-Projetos):**
-   * Embora o histórico de chat fique restrito à pasta de cada projeto, o modelo local **Hermes (Camada 1)** extrai e indexa continuamente os aprendizados técnicos finalizados (embeddings RAG de padrões de código, soluções de bugs e boas práticas) em uma memória vetorial global. Dessa forma, o Hermes preserva o conhecimento técnico acumulado entre múltiplos projetos sem misturar o contexto de conversas passadas.
+```mermaid
+graph TD
+    subgraph GLOBAL ["Nível 1: Chat Global (Admin do Sistema & App)"]
+        G_RAG["RAG: Todos os Workspaces + Configs"]
+        G_PERM["Ações Globais: Ajuste do 9Router e App (Confirmação Expressa)"]
+        
+        subgraph WS ["Nível 2: Chat de Workspace (Visão Multiprojeto)"]
+            WS_RAG["RAG: Todos os Projetos deste Workspace"]
+            WS_PKG["Camada Compartilhada de Pacotes (.shared_packages)"]
+            
+            subgraph PROJ ["Nível 3: Chat de Projeto (Foco no Repositório)"]
+                P_RAG["RAG: Código, Arquivos, Skills e Blackboard (.md)"]
+                
+                subgraph SBX ["Nível 4: Chat de Sandbox / Contêiner Aninhado"]
+                    SB_RAG["RAG: Estritamente a sessão e variáveis locais"]
+                    SB_ENV["Ambiente Isolado (libproot / subshell com CWD restrito)"]
+                end
+            end
+        end
+    end
+```
+
+---
+
+### 5.1. A Matriz das 4 Camadas de Chats & RAG (Escopos de Contexto)
+
+Em vez de uma lista plana de conversas, o usuário e a IA operam em escopos rigorosamente delimitados:
+
+| Camada | Escopo de Contexto & RAG | O que a IA Consegue Acessar | Privilégios & Capacidades Especiais |
+| :--- | :--- | :--- | :--- |
+| **1. Chat Global** | **Global do Dispositivo** | Enxerga todos os workspaces cadastrados, métricas de hardware, logs agregados e configurações do app. | **Administração Geral:** Gerencia chaves de API, ajusta rotas do 9Router, cadastra modelos e altera configurações do app *(sempre exigindo confirmação explícita do usuário)*. |
+| **2. Chat de Workspace** | **Multi-Projeto** | Enxerga todos os projetos dentro daquele Workspace específico (ex: relaciona a documentação de um app com o código de outro repositório). | Ideal para arquitetura de sistemas distribuídos, orquestração entre múltiplos projetos e refatorações amplas entre módulos. |
+| **3. Chat de Projeto** | **Projeto Específico** | Estritamente os arquivos da pasta do projeto, seu histórico de chats, Quadro Branco (`.md`), branches Git e notas locais. | Focado em implementação de código, depuração, testes e governança técnica do repositório ativo. |
+| **4. Chat de Sandbox** | **Isolamento Confinado** | Apenas as variáveis de execução daquele script e o ambiente virtual do contêiner. Zero vazamento para fora. | Testes experimentais de scripts sujos, execução de código gerado não confiável e simulações rápidas. |
+
+---
+
+### 5.2. Localização em `Documentos/` e Escape Confinado (Quebra Controlada de Sandbox)
+
+* **Diretório Raiz Padrão no Android:**
+  O aplicativo cria e gerencia toda a árvore de trabalho na pasta pública padrão de documentos do dispositivo:
+  ```text
+  /sdcard/Documents/MaestroWorkspaces/
+  ├── Workspace-Dev/
+  │   ├── .shared_packages/          # Pacotes Python e binários compartilhados do Workspace
+  │   ├── Projeto-Maestro/
+  │   │   ├── hermes.yaml            # Configuração nativa do agente do projeto
+  │   │   ├── skills/                # Habilidades especializadas do projeto
+  │   │   ├── src/                   # Código-fonte
+  │   │   ├── conferencias/          # Blackboard vivo (projeto_atual.md)
+  │   │   └── .sandboxes/            # Contêineres e sandboxes fixos do projeto
+  │   └── Projeto-WebApp/
+  └── Workspace-Estudos/
+  ```
+* **Escape Confinado (Permissão Explícita para Acesso Externo):**
+  * Por padrão, a IA só tem permissão de leitura e escrita restrita à pasta do seu projeto/workspace.
+  * Caso o usuário peça no chat para o agente manipular um arquivo externo (ex: *"Hermes, resuma a planilha que está em /sdcard/Download/despesas.xlsx"*), o middleware de governança **bloqueia a ação imediatamente** e exibe um pop-up de segurança nativo na UI:
+    > ⚠️ **Acesso Externo Solicitado**  
+    > O agente deseja acessar um arquivo fora do workspace atual:  
+    > Caminho: `/sdcard/Download/despesas.xlsx`  
+    > Operação: `Leitura`  
+    > `[ Negar ]` `[ Permitir Desta Vez ]` `[ Permitir Sempre neste Chat ]`
+
+---
+
+### 5.3. Sandboxes & Contêineres Aninhados com Camada Compartilhada de Pacotes (*Shared Layering*)
+
+Para viabilizar execução de código com máxima economia de armazenamento e zero perda de tempo no Poco X7 Pro:
+
+1. **Permanência e Cota Rígida por Projeto:**
+   * Os sandboxes/contêineres são **fixos e persistentes** (mantendo dependências instaladas entre reinicializações do app).
+   * Cada projeto possui uma cota máxima configurável (padrão: **máximo de 3 contêineres/sandboxes por projeto**), impedindo o acúmulo descontrolado de pastas virtuais e processos zumbis na memória.
+2. **Herança em Camadas (*Shared Layering* sem Duplicação):**
+   * **Instalação no Nível Superior (Workspace):** Quando um pacote Python (`pip install`) ou binário de sistema for instalado em um contêiner, o instalador verifica se a biblioteca já existe na camada compartilhada do Workspace pai (`.shared_packages`).
+   * **Se já existir:** O contêiner filho herda o pacote instantaneamente via inclusão no `PYTHONPATH` (`PYTHONPATH=/sdcard/Documents/MaestroWorkspaces/<workspace>/.shared_packages:$PYTHONPATH`) ou via Bind Mount de `/shared/bin` para `/usr/local/bin`, consumindo **zero espaço em disco adicional e zero tempo de download**.
+   * **Se não existir:** O pacote é instalado diretamente na camada compartilhada do Workspace (salvo solicitação em contrário), ficando disponível imediatamente para todos os outros projetos e contêineres irmãos.
+   * **Sobrescrita Local de Versão (*Local Overrides*):** Se um projeto exigir uma versão conflitante específica (ex: `pydantic==1.10` em vez de `pydantic==2.0`), o pacote local é instalado no diretório privado daquele sandbox, tendo prioridade na ordem de resolução do `PYTHONPATH`.
+
+---
+
+### 5.4. Template Padrão de Novos Projetos (Espelhado no Padrão Nativo do Hermes Agent)
+
+Para manter 100% de interoperabilidade com o ecossistema oficial do **Hermes Agent (NousResearch)** sem criar formatos proprietários, o template de novos projetos adota nativamente a estrutura declarativa do Hermes:
+
+* **Estrutura Gerada ao Criar Novo Projeto:**
+  ```text
+  <nome-do-projeto>/
+  ├── hermes.yaml            # Configuração declarativa do agente (modelos, endpoint 9Router, tools ativas)
+  ├── skills/                # Diretório de habilidades especializadas (prompts e scripts do projeto)
+  ├── src/                   # Diretório de código-fonte e módulos de desenvolvimento
+  ├── docs/                  # Documentações técnicas e histórico
+  ├── conferencias/          # Histórico permanente do Blackboard (projeto_atual.md)
+  └── .sandboxes/            # Instâncias persistentes de sandbox/contêiner (até 3)
+  ```
+* **Vantagens da Adoção do Padrão Hermes:**
+  1. Qualquer skill criada pela comunidade para o Hermes Agent pode ser copiada diretamente para a pasta `skills/` do projeto e utilizada instantaneamente.
+  2. As configurações de system prompt, permissões de ferramentas e temperatura são editáveis diretamente no arquivo `hermes.yaml` ou pelo painel visual do aplicativo.
+  3. Preserva o isolamento de cada projeto, permitindo que cada um tenha suas próprias skills e ferramentas MCP ativadas sob medida.
 
 ---
 
