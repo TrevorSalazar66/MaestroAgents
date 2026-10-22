@@ -20,9 +20,9 @@ Para prever o comportamento exato do sistema, as ferramentas e modelos são cate
 
 | Camada | Tipo de Ferramenta | Provedores & Modelos Alvo | Método de Conexão | Função Principal |
 | :--- | :--- | :--- | :--- | :--- |
-| **Camada 3** | Official Web & IDEs (Superfície) | • Antigravity IDE (Gemini 2.5 / Claude)<br>• ChatGPT Web (GPT-4o / GPT-4o-mini)<br>• Gemini Web (Gemini Advanced / Flash) | • Playwright RPA (PC)<br>• Tasker / UIAutomator (Mobile)<br>• Contexto Direct IDE | Raciocínio pesado, arquitetura, crítica profunda e geração inicial de código. |
-| **Camada 2** | APIs Externas Não-Locais (Intermediária) | • Groq Cloud (Llama 3.3 70B, Llama 3.1 8B, Mixtral)<br>• OpenRouter Free (DeepSeek-R1 / V3, Qwen 2.5 Coder)<br>• 9router Proxy Hub | • API REST JSON (`/v1/chat/completions`) | Roteamento rápido, síntese de consenso, sanitização, mediação e fallback imediato. |
-| **Camada 1** | Inferência Local (Profunda) | • Hermes / Gemma 2B<br>• Llama 3.2 3B / Llama 3 8B Quantizado (Q4_K_M) | • Llama.cpp Server (`localhost:8080`) / MLC LLM | Operação 100% offline, privacidade, assistente de suporte dedicado e RAG local. |
+| **Camada 3** | Official Web & IDEs (Superfície) | • Antigravity IDE (Gemini 2.5 / Claude)<br>• ChatGPT Web (GPT-4o / GPT-4o-mini)<br>• Gemini Web (Gemini Advanced / Flash) | • Playwright RPA (PC)<br>• Android Accessibility Service & WebView Headless (Mobile)<br>• Contexto Direct IDE | Raciocínio pesado, arquitetura, crítica profunda e geração inicial de código. |
+| **Camada 2** | APIs Externas Não-Locais (Intermediária) | • Groq Cloud (Llama 3.3 70B, Llama 3.1 8B, Mixtral)<br>• OpenRouter Free (DeepSeek-R1 / V3, Qwen 2.5 Coder)<br>• 9router Proxy Hub (Fallback Automático) | • API REST JSON (`/v1/chat/completions`) | Roteamento rápido, síntese de consenso, sanitização, mediação e fallback imediato sem custo. |
+| **Camada 1** | Inferência Local & Agente Embutido (Profunda) | • Hermes Agent (NousResearch)<br>• Gemma 2B / Llama 3.2 3B Quantizado<br>• Servidores MCP Internos | • Chaquopy JVM (Android Nativo)<br>• Llama.cpp Server (`localhost:8080`) | Operação local/offline, autonomia agêntica direta no SO, manipulação de arquivos e RAG local. |
 
 ---
 
@@ -154,54 +154,115 @@ Para garantir que o usuário tenha **controle total, visibilidade transparente e
 
 ### 6.2. Modos de Acesso & Experiência do Usuário (UX)
 
-O usuário acessa todas as funcionalidades acima através de **3 interfaces dedicadas**:
+O usuário acessa todas as funcionalidades acima através de **4 interfaces dedicadas**:
 
 #### A. Dashboard Web Local (Navegador - SPA)
 * **Acesso:** `http://localhost:8000/dashboard` (Interface gráfica leve em HTML5/CSS Vanilla com WebSockets).
 * **Navegação por Abas:**
-  * 💬 **Aba "Debate ao Vivo":** Painel principal em 3 colunas:
-    * *Coluna Esquerda:* Leitor de arquivos e árvore de pastas do projeto ativo.
-    * *Coluna Central:* Chat do debate ao vivo com streaming dos 7 turnos, cartões de identificação de modelos, caixa de chat de injeção direta no fluxo e botões de override/pausa.
-    * *Coluna Direita:* Quadro Branco `.md` ao vivo e chat lateral com a **IA Dedicada (Árbitro/Assistente)**.
-  * 📊 **Aba "Telemetria & Cotas":** Dashboard gráfico mostrando velocímetros de RAM/VRAM consumidas pelo Hermes local, medidores de latência (ms e t/s) e cartões de cotas de API com contagem regressiva para o reset de cada provedor.
-  * ⚙️ **Aba "Gerenciador de IAs":** Formulário intuitivo para adicionar novas chaves de API, cadastrar novos modelos, configurar seletores de RPA e ajustar preferências de fallback.
-  * 📁 **Aba "Workspaces & Projetos":** Explorador visual de projetos com opções de clonagem, backup, exportação e botão de navegação para ambiente limpo (*Clean Slate*).
+  * 💬 **Aba "Debate ao Vivo":** Painel principal em 3 colunas (Árvore de arquivos, Chat ao vivo streaming dos 7 turnos com injeção in-stream, e Quadro Branco `.md` sincronizado com chat de suporte).
+  * 📊 **Aba "Telemetria & Cotas":** Dashboard gráfico com velocímetros de consumo de memória, medidores de latência (ms e t/s) e cartões de cotas de API com contagem regressiva para reset.
+  * ⚙️ **Aba "Gerenciador de IAs":** Formulário intuitivo para cadastrar chaves, registrar modelos e gerenciar rotas de fallback do 9router.
+  * 📁 **Aba "Workspaces & Projetos":** Explorador visual de projetos com opções de clonagem, backup, exportação e navegação para ambiente limpo (*Clean Slate*).
   * 🧪 **Aba "Replay & Sandbox":** Ferramenta para testes A/B de modelos e ambiente isolado para execução de código gerado.
 
 #### B. Interface CLI de Terminal (`maestro-cli`)
 * **Acesso:** Linha de comando no terminal (`python3 -m maestro` ou `./maestro-cli`).
 * **Navegação Interativa (Rich TUI):**
   * Painel dividido no terminal com cores vibrantes destacando o papel de cada IA, velocidade (t/s) e consumo de memória.
-  * Menu de navegação por atalhos de teclado: `Tab` para alternar entre telas (Debate, Telemetria, Arquivos, Assistente Dedicado), `Ctrl+P` para pausar o debate e intervir manualmente.
-  * **Comandos Diretos:**
-    * `maestro --project <nome>` (Seleciona ou cria workspace em pasta vazia)
-    * `maestro --status` (Exibe telemetria de RAM/VRAM, latência e cotas)
-    * `maestro --add-ai` (Assistente no terminal para cadastrar nova IA ou chave API)
-    * `maestro --offline` (Força chaveamento para a Camada 1 Hermes Local)
-    * `maestro --arbitrate` (Aciona a IA Árbitro para resolver impasse)
-    * `maestro --export` (Exporta documentação formatada do projeto)
+  * Menu de navegação por atalhos de teclado: `Tab` para alternar entre telas e `Ctrl+P` para pausar o debate e intervir manualmente.
+  * **Comandos Diretos:** `maestro --project <nome>`, `maestro --status`, `maestro --add-ai`, `maestro --offline`, `maestro --arbitrate`, `maestro --export`.
 
 #### C. Gateway Proxy Transparente (OpenAI API Compatible)
 * **Acesso:** `http://localhost:8000/v1/chat/completions`.
-* **Uso:** Conexão direta com IDEs (Antigravity IDE, VS Code, Cursor). Os metadados de telemetria (cotas, RAM, modelo ativo e camada) são transmitidos de forma transparente nos cabeçalhos HTTP da resposta (`X-Maestro-Layer`, `X-Maestro-Model`, `X-Maestro-RAM-Used`, `X-Maestro-Quota-Reset`).
+* **Uso:** Conexão direta com IDEs (Antigravity IDE, VS Code, Cursor). Os metadados de telemetria (cotas, RAM, modelo ativo e camada) são transmitidos nos cabeçalhos HTTP da resposta (`X-Maestro-Layer`, `X-Maestro-Model`, `X-Maestro-RAM-Used`, `X-Maestro-Quota-Reset`).
+
+#### D. Aplicativo Nativo Android (APK Unificado - Sistema Operacional Agêntico)
+* **Acesso:** Aplicativo nativo instalado via sideload no smartphone (alvo: Poco X7 Pro com HyperOS, 12 GB RAM / 512 GB).
+* **Estrutura:** Frontend nativo em **Kotlin + Jetpack Compose** com backend lógico e orquestrador embutido via **Chaquopy (Python NDK)**.
+* **Operação:** Consolida em um único app o explorador de arquivos estilo ZArchiver, editores nativos, servidores MCP, navegação web invisível, automação em outros apps, diagnósticos de rede e comunicação por voz.
 
 ---
 
 ## 🛠️ 7. Automação de Interface & RPA Persistente
 
 Para viabilizar a utilização das plataformas oficiais da Camada 3 sem custos de API:
-* **No PC (Linux):** Utilização de automação de navegador via **Playwright Python** operando com **Contexto Persistente** (`user_data_dir`), mantendo a sessão ativa e logada no navegador do usuário.
-* **No Celular (Android):** Integração entre scripts Python no Termux e automação de área de transferência/ações de tela via Tasker/AutoInput quando aplicável.
+* **No PC (Linux):** Automação de navegador via **Playwright Python** operando com **Contexto Persistente** (`user_data_dir`), mantendo a sessão ativa e logada no navegador do usuário.
+* **No Celular (Android Nativo):**
+  * **Navegação Web Real:** Componente nativo `WebView` em segundo plano com injeção de JavaScript para extração do DOM e simulação de cliques/preenchimentos guiados pelo agente.
+  * **Automação de Apps Externos:** Implementação nativa de um `Accessibility Service` que permite ao agente inspecionar a hierarquia visual de outros aplicativos instalados e executar ações autônomas.
+  * **Consciência de Tela:** Uso da `MediaProjection API` para captura de tela contínua e análise visual multimodal (visão computacional / OCR).
 
 ---
 
-## 🎯 8. Objetivos Centrais de Sucesso do Projeto
+## 📱 8. Especificação da Arquitetura Mobile Nativa (Android / Poco X7 Pro)
+
+Esta seção formaliza as decisões de engenharia para a execução do agente em ambiente mobile nativo, eliminando a dependência de ambientes de terminal externos:
+
+### 8.1. Decisão Arquitetural: App Único Autocontido vs Ambientes de Emulação
+1. **Abandono do Termux / Proot Externo:**
+   * Evita a complexidade operacional de manter contêineres Linux e servidores paralelos rodando manualmente em segundo plano.
+   * Elimina problemas de perda de foco e fragmentação de interfaces.
+2. **Inviabilidade do Shizuku como Solução de Sistema:**
+   * A partição `/system` do Android moderno é estritamente somente-leitura e protegida por integridade criptográfica (*dm-verity*), impossibilitando instalar interpretadores diretamente no sistema sem Root real (Magisk/KernelSU).
+   * O Shizuku opera no nível ADB (UID 2000) e exige pareamento recorrente por Depuração sem Fio (*Wireless Debugging*) a cada reinicialização, quebrando a autonomia do app.
+3. **Adoção do Chaquopy (Python NDK Integrado):**
+   * O interpretador Python roda diretamente dentro da JVM do APK como biblioteca nativa compilada com a Android NDK.
+   * Executa os scripts do Hermes Agent, servidores MCP e lógica do Maestro sem requerer root, ADB ou ferramentas externas.
+
+### 8.2. Permissões Críticas & Sobrevivência no HyperOS (Xiaomi)
+1. **Acesso Global ao Armazenamento (`MANAGE_EXTERNAL_STORAGE`):**
+   * Declaração de "Acesso a todos os arquivos" no `AndroidManifest.xml` para contornar as restrições do *Scoped Storage*, permitindo que o agente leia, edite, organize e crie pastas em todo o armazenamento interno (`/sdcard`).
+2. **Blindagem contra Encerramento Agressivo (HyperOS Battery Killer):**
+   * **Foreground Service Contínuo:** O app mantém um serviço em primeiro plano associado a uma notificação persistente na barra de status, impedindo que o sistema operacional encerre o processo do agente durante execuções longas.
+   * **Configurações Manuais do Dispositivo:** Ativação de "Início Automático" (*Autostart*) e alteração da economia de bateria para "Nenhuma restrição" nas propriedades do APK no HyperOS.
+3. **Gatilhos por Eventos e Cron Agêntico:**
+   * Integração de `WorkManager` e `BroadcastReceiver` nativos do Android para despertar o agente mediante eventos de sistema (conexão a redes Wi-Fi específicas, variação de bateria, recepção de arquivos) ou rotinas agendadas (verificação diária matinal de logs e pendências).
+
+### 8.3. Roteamento de Inferência via 9Router (Preservação de Hardware)
+* **Desoneração de Memória:** A inferência pesada de modelos de linguagem é 100% transferida para provedores em nuvem gratuitos via proxy local **9Router** (`http://127.0.0.1:20128/v1`).
+* **Consumo Estimado no Poco X7 Pro:** O APK com Kotlin e Chaquopy consome entre **200 MB e 400 MB de RAM**, operando com extrema folga nos 12 GB de LPDDR5X do dispositivo. O tamanho do APK fica entre **100 MB e 250 MB**, ocupando fração desprezível dos 512 GB de armazenamento.
+* **Fallback Automático e Resiliência:** Caso um provedor gratuito atinja limite de taxa (erro 429) ou apresente instabilidade, o 9Router repassa a requisição imediatamente ao próximo provedor configurado, garantindo continuidade do raciocínio agêntico.
+
+### 8.4. Sandbox Multi-Linguagem Local
+Para atuar como ambiente completo de resolução de problemas, o app integra motores leves para execução de código sob demanda:
+* **Python:** Interpretador Chaquopy nativo para execução de scripts analíticos, chamadas de API e manipulação de dados.
+* **HTML / CSS / JS (Visual):** Android `WebView` com injeção dinâmica de código via `loadDataWithBaseURL()`.
+* **JavaScript (Lógica pura):** Motor ultraleve `QuickJS` embutido via JNI para processamento veloz de JSON e cálculos sem renderização gráfica.
+* **Shell Script:** Chamadas diretas de comandos do sistema operacional via `java.lang.ProcessBuilder`.
+* **Java Dinâmico:** Biblioteca `BeanShell` para interpretação de scripts com sintaxe Java em tempo de execução.
+* **Terminais e Ambientes Isolados:** Integração planejada da `libproot` compilada internamente em conjunto com componentes de terminal (`TerminalView`).
+
+### 8.5. Catálogo de Módulos & Funcionalidades Nativas do App
+1. **Explorador e Gerenciador de Arquivos (Padrão ZArchiver):**
+   * Navegação em árvore de diretórios com permissão total de criação, renomeação, exclusão e movimentação de arquivos.
+2. **Visualizador e Editor Nativo Multi-Formato:**
+   * Suporte a `.md` (renderização visual via Markwon), `.txt` (edição de texto puro), `.pdf` (visualização via `PdfRenderer` nativo) e `.docx` (leitura e edição básica via Apache POI).
+3. **Servidores MCP Internos (Model Context Protocol):**
+   * Servidores rodando no ambiente Chaquopy expondo ferramentas padronizadas de leitura de arquivos, execução de código e diagnóstico de sistema diretamente para o Hermes Agent.
+4. **Ferramentas Avançadas de Rede e Diagnóstico:**
+   * Escaneamento de rede local (LAN), varredura de portas abertas e identificação de IPs ativos no roteador via `WifiManager` e `NetworkInterface`.
+   * Mapeamento e detecção de dispositivos próximos via `BluetoothLeScanner`.
+5. **Governança & Sandboxing de Segurança:**
+   * Middleware de segurança que intercepta todas as ações da IA antes do despacho para o sistema operacional, aplicando listas negras de diretórios sensíveis (ex: `/sdcard/DCIM/Camera`, pastas de sistema), restrições de tipos de arquivo e validação de URLs.
+6. **Processamento Multimídia e Conversação por Voz:**
+   * Síntese de fala (`TextToSpeech`) e reconhecimento de voz (`SpeechRecognizer`) nativos, com suporte a transcrição avançada via Whisper API através do 9Router.
+   * Processamento e conversão de mídia local via biblioteca `FFmpegKit`.
+7. **Memória de Longo Prazo e RAG Local:**
+   * Banco vetorial leve (ObjectBox nativo ou SQLite com suporte a vetores) alimentado continuamente com dados de sessões e arquivos de trabalho, complementando o histórico do Quadro Branco Markdown.
+8. **Controle de Versão Nativo (Git Integrado):**
+   * Integração de bibliotecas Git (JGit em Java ou GitPython no Chaquopy) para clonar repositórios, commitar alterações e sincronizar projetos diretamente da memória do celular.
+
+---
+
+## 🎯 9. Objetivos Centrais de Sucesso do Projeto
 
 * **Custo Zero Garantido:** Operação contínua baseada exclusivamente em tiers gratuitos e execução local.
-* **Disponibilidade Permanente:** Resiliência contra quedas de internet, rate-limits e bloqueios de RPA.
-* **Múltiplas Interfaces de Uso:** Suporte a Dashboard Web completo (3 colunas), CLI rica no Terminal e Proxy para IDEs.
+* **Disponibilidade Permanente:** Resiliência contra quedas de internet, rate-limits e bloqueios de RPA com fallback automático em todas as camadas.
+* **Sistema Operacional Agêntico Nativo:** Entrega de um aplicativo Android unificado e autocontido (.apk), dispensando terminais externos e configurações complexas de ambiente.
+* **Múltiplas Interfaces de Uso:** Suporte a App Android Nativo, Dashboard Web completo (3 colunas), CLI rica no Terminal e Proxy para IDEs.
 * **Inteligência Auxiliar Dedicada:** Suporte a IA Árbitro para impasses, IA Coletora para buscas e Chat de Suporte ao Usuário.
 * **Controle & Telemetria Total:** Visibilidade de RAM/VRAM, tempo de reset de cotas, modelos ativos, bate-papo in-stream e intervenção manual (*Override*).
 * **Qualidade de Código Auditada:** Ciclo de code review obrigatório e Sandbox de testes antes de aceitar qualquer código gerado.
 * **Preservação Multi-Projeto & Aprendizado Global:** Garantia de pastas exclusivas por projeto com preservação integral de logs e aprendizado técnico passivo acumulado no Hermes.
 * **Transparência & Auditabilidade:** Registro legível de todo o processo em arquivos Markdown (`.md`).
+
