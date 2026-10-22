@@ -26,13 +26,16 @@ Para prever o comportamento exato do sistema, as ferramentas e modelos são cate
 
 ---
 
-## 🔄 3. O Fluxo do Debate Moderado & Aprimoramento Incremental de Código
+## 🔄 3. O Fluxo do Debate Moderado & Aprimoramento Incremental de Código (Modo "Pensamento Profundo")
 
-O **Padrão Blackboard** (histórico vivo em `conferencias/<nome-do-projeto>/projeto_atual.md`) opera através de um loop expansível de **7 turnos padronizados**, focado não apenas em debate de conceitos, mas no **refinamento estrito de código**:
+O fluxo de debate colaborativo em **7 turnos padronizados** com o **Padrão Blackboard** (histórico vivo em `conferencias/<nome-do-projeto>/projeto_atual.md`) opera como o motor do **Modo "Pensamento Profundo" (*Deep Deliberation / Deep Thinking*)**:
+
+* **Modo Padrão (Agente Rápido):** Na operação cotidiana, o usuário interage diretamente com o **Hermes Agent** em diálogo fluido e respostas sub-segundo/imediatas via provedor mais rápido do 9Router (Groq/DeepSeek) ou inferência local, chamando ferramentas MCP sob demanda sem disparar a conferência completa.
+* **Modo Pensamento Profundo (Mesa Redonda Opcional):** Acionado sob demanda pelo usuário via chave de seleção (*toggle switch*) na interface para tarefas complexas, arquiteturas críticas ou refatoração profunda de código. Quando ativado, a requisição desencadeia a conferência em 7 turnos:
 
 ```mermaid
 graph TD
-    A[Prompt do Usuário] --> T1[Turno 1: Expansão de Conceito - ChatGPT Web]
+    A[Prompt do Usuário + Toggle Pensamento Profundo ON] --> T1[Turno 1: Expansão de Conceito - ChatGPT Web]
     T1 --> T2[Turno 2: Crítica Arquitetural - Gemini Web]
     T2 --> T3[Turno 3: Síntese & Especificação - 9router / Groq]
     T3 --> T4[Turno 4: Geração Inicial de Código - Antigravity IDE]
@@ -178,7 +181,15 @@ O usuário acessa todas as funcionalidades acima através de **4 interfaces dedi
 
 #### D. Aplicativo Nativo Android (APK Unificado - Sistema Operacional Agêntico)
 * **Acesso:** Aplicativo nativo instalado via sideload no smartphone (alvo: Poco X7 Pro com HyperOS, 12 GB RAM / 512 GB).
-* **Estrutura:** Frontend nativo em **Kotlin + Jetpack Compose** com backend lógico e orquestrador embutido via **Chaquopy (Python NDK)**.
+* **Interface Central (Baseada na Web UI do Hermes Agent / Open WebUI):**
+  * O app recria visual e funcionalmente a interface consagrada da comunidade para o **Hermes Web Dashboard**, adaptada nativamente para Android em **Jetpack Compose**.
+  * **Sidebar Lateral Deslizante:** Lista de sessões de chat anteriores, alternador de workspaces por projeto, atalho direto para o Explorador de Arquivos (ZArchiver) e painel de configurações de Provedores/Chaves.
+  * **Área de Mensagens com Cards de Tool-Calling:** Cada execução de ferramenta MCP (leitura/escrita de arquivos, comandos de terminal, varredura de rede) é exibida em cartões colapsáveis limpos com status de execução (`Status 200 OK`, parâmetros e saída), sem poluir visualmente a conversa.
+  * **Barra de Ações Rápidas (Toggles Superiores ao Prompt):**
+    * `[🧠 Pensamento Profundo: ON/OFF]`: Ativa ou desativa a Mesa Redonda de 7 turnos.
+    * `[👁️ Consciência de Tela: ON/OFF]`: Ativa ou desativa a captura via MediaProjection.
+  * **Barra de Entrada:** Campo de texto com anexos locais (`+`), gravação de voz contínua (`🎙️`) e seleção rápida de modelos.
+* **Estrutura de Código:** Frontend nativo em **Kotlin + Jetpack Compose** com backend lógico e orquestrador embutido via **Chaquopy (Python NDK)**.
 * **Operação:** Consolida em um único app o explorador de arquivos estilo ZArchiver, editores nativos, servidores MCP, navegação web invisível, automação em outros apps, diagnósticos de rede e comunicação por voz.
 
 ---
@@ -190,7 +201,7 @@ Para viabilizar a utilização das plataformas oficiais da Camada 3 sem custos d
 * **No Celular (Android Nativo):**
   * **Navegação Web Real:** Componente nativo `WebView` em segundo plano com injeção de JavaScript para extração do DOM e simulação de cliques/preenchimentos guiados pelo agente.
   * **Automação de Apps Externos:** Implementação nativa de um `Accessibility Service` que permite ao agente inspecionar a hierarquia visual de outros aplicativos instalados e executar ações autônomas.
-  * **Consciência de Tela:** Uso da `MediaProjection API` para captura de tela contínua e análise visual multimodal (visão computacional / OCR).
+  * **Consciência de Tela (Opcional via Toggle):** Integração da `MediaProjection API` com **ativação desativável por chave**. Fica **desligada por padrão** para garantir privacidade absoluta, zero consumo de bateria e economia de GPU, sendo ligada pelo usuário apenas quando desejar que a IA "veja" o conteúdo da tela ativa.
 
 ---
 
@@ -247,8 +258,11 @@ Para atuar como ambiente completo de resolução de problemas, o app integra mot
 6. **Processamento Multimídia e Conversação por Voz:**
    * Síntese de fala (`TextToSpeech`) e reconhecimento de voz (`SpeechRecognizer`) nativos, com suporte a transcrição avançada via Whisper API através do 9Router.
    * Processamento e conversão de mídia local via biblioteca `FFmpegKit`.
-7. **Memória de Longo Prazo e RAG Local:**
-   * Banco vetorial leve (ObjectBox nativo ou SQLite com suporte a vetores) alimentado continuamente com dados de sessões e arquivos de trabalho, complementando o histórico do Quadro Branco Markdown.
+7. **Memória de Longo Prazo e RAG Local de Alta Densidade (Aumento Artificial de Contexto):**
+   * **Objetivo Primário:** Expandir artificialmente a capacidade de contexto do modelo sem estourar os limites de tokens da API nem gerar custos adicionais.
+   * **Base de Dados Vetorial Local:** Implementação via `ObjectBox Vector Search` (Kotlin nativo) ou `SQLite-Vec` integrado ao armazenamento local.
+   * **Pipeline de Ingestão & Chunking Semântico:** Indexação contínua de conversas passadas, arquivos de texto (`.md`, `.txt`), trechos de código e PDFs presentes no armazenamento do aparelho.
+   * **Recuperação Contextual Rápida:** Antes de submeter o prompt à nuvem ou ao modelo local, o motor RAG executa busca por similaridade (*cosine distance*), resgatando os blocos mais relevantes da memória histórica e injetando-os cirurgicamente no prompt do Hermes Agent.
 8. **Controle de Versão Nativo (Git Integrado):**
    * Integração de bibliotecas Git (JGit em Java ou GitPython no Chaquopy) para clonar repositórios, commitar alterações e sincronizar projetos diretamente da memória do celular.
 
