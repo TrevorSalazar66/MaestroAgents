@@ -323,6 +323,26 @@ Esta seção formaliza as decisões de engenharia para a execução do agente em
 * **Consumo Estimado no Poco X7 Pro:** O APK com Kotlin e Chaquopy consome entre **200 MB e 400 MB de RAM**, operando com extrema folga nos 12 GB de LPDDR5X do dispositivo. O tamanho do APK fica entre **100 MB e 250 MB**, ocupando fração desprezível dos 512 GB de armazenamento.
 * **Fallback Automático e Resiliência:** Caso um provedor gratuito atinja limite de taxa (erro 429) ou apresente instabilidade, o 9Router repassa a requisição imediatamente ao próximo provedor configurado, garantindo continuidade do raciocínio agêntico.
 
+#### 8.3.1. Rota 1 Zero-Key & Onboarding Agêntico Out-of-the-Box
+Para eliminar a fricção da "tela em branco" no primeiro uso, o aplicativo inicia de fábrica **pronto para conversar sem exigir chaves prévias do usuário**:
+
+1. **Origem dos Modelos Comunitários Gratuitos (Zero-Key):**
+   * **OpenRouter Free Tier:** Modelos abertos mantidos por infraestruturas patrocinadas com sufixo `:free` (`meta-llama/llama-3.3-70b-instruct:free`, `qwen/qwen-2.5-coder-32b-instruct:free`, `deepseek/deepseek-r1:free`).
+   * **Proxies Comunitários & OpenCode / AgentRouter:** Pools de nós comunitários que expõem endpoints compatíveis com a OpenAI API para uso livre.
+   * **Cloudflare Workers AI:** Cota diária de requisições gratuitas sem necessidade de cartão de crédito.
+2. **Análise de Segurança & Privacidade de Dados:**
+   * **No Onboarding / Setup Inicial (Risco Zero):** O diálogo de primeiro uso envolve apenas saudações, ajuda técnica e instruções de configuração, sem tráfego de dados confidenciais ou código privado.
+   * **Recomendação para Dados Sensíveis:** Em provedores públicos comunitários não há garantia de *Zero Data Retention*. Para projetos com código confidencial, arquivos pessoais ou credenciais, o assistente incentiva ativamente o usuário a cadastrar suas **chaves gratuitas pessoais** (Groq e Google AI Studio), onde a criptografia ponta a ponta e as políticas de privacidade oficiais são respeitadas.
+3. **Limites Reais vs. "Ilusão de Infinito":**
+   * **Limites Individuais por IP:** Endpoints públicos impõem restrições de taxa (15 a 20 requisições por minuto e 200 a 500 requisições diárias por IP), além de eventuais filas em horários de pico.
+   * **A Engenharia da "Ilusão de Infinito" no 9Router:** Um provedor gratuito isolado trava com erro `429 Too Many Requests`. No entanto, o 9Router opera com uma **cascata rotativa de 5 a 10 provedores em pool**. Ao receber um status 429 do Provedor 1, o 9Router redireciona a requisição em ~50ms para o Provedor 2, depois para o 3, e assim sucessivamente. Para o uso cotidiano humano (dezenas a centenas de prompts por dia), o ciclo de reset de cotas por minuto garante uma experiência de **uso ininterrupto e virtualmente infinito a custo zero**.
+4. **Agente de Setup no Chat Global (Configuração por Linguagem Natural):**
+   * Ao abrir o app pela primeira vez, o usuário é saudado no **Chat Global** pelo Hermes Setup Agent.
+   * O usuário pode simplesmente digitar ou colar sua chave: *"Tenho a chave da Groq: gsk_..."*.
+   * O agente aciona internamente a Tool MCP `configurar_provedor_9router()`, gravando as configurações no SQLite local do 9Router e testando o ping em tempo real, sem exigir formulários manuais.
+   * Caso o usuário não tenha chaves, o agente aciona a abertura de uma WebView interna direcionada ao console da Groq ou Google AI Studio para geração gratuita em 1 clique.
+   * Finalizada a configuração, o agente cria automaticamente o primeiro Workspace e Projeto em `/sdcard/Documents/MaestroWorkspaces/`.
+
 ### 8.4. Sandbox Multi-Linguagem Local
 Para atuar como ambiente completo de resolução de problemas, o app integra motores leves para execução de código sob demanda:
 * **Python:** Interpretador Chaquopy nativo para execução de scripts analíticos, chamadas de API e manipulação de dados.
